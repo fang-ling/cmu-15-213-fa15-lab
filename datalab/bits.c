@@ -192,7 +192,15 @@ int isTmax(int x) {
  *   Rating: 2
  */
 int allOddBits(int x) {
-  return 2;
+    int mask = 0xaa; /* 0b10101010 */
+    mask <<= 8; mask += 0xaa;
+    mask <<= 8;	mask +=	0xaa;
+    mask <<= 8;	mask +=	0xaa;
+
+    /* mask is now all odd-numbered bits in word set to 1.
+     * i.e. 0b10101010101010101010101010101010
+     */
+    return !(mask ^ (x & mask));
 }
 /*
  * negate - return -x
