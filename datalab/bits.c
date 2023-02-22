@@ -173,7 +173,15 @@ int tmin(void) {
  *   Rating: 1
  */
 int isTmax(int x) {
-  return 2;
+    /* If x is the maximum, two's complement number, then x should be
+     *          0b0111.......111
+     *             \--31 ones--/
+     * that's to say: x + 1 == ~x.
+     * However, 0b11111..111111 also satisfy this equation. We need to
+     *            \--32 ones--/
+     * exclude this kind of possibility. Since 0b11111..111111 = (~1) + 1.
+     */
+    return !((x + 1) ^ (~x)) & !!(x ^ ((~1) + 1));
 }
 /*
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
