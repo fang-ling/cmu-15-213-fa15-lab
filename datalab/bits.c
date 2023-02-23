@@ -223,7 +223,20 @@ int negate(int x) {
  *   Rating: 3
  */
 int isAsciiDigit(int x) {
-  return 2;
+    int least_sig_four_bits = x & 0xf;
+    int minus_1 = ~1 + 1;
+    int minus_9 = ~9 + 1;
+    /* check if least significant four bits is less than 0x9,
+     * if so, then (`least_sig_four_bits` + `minus_9`) will always result -1.
+     * (Performs right shifts arithmetically.)
+     */
+    int diff = (least_sig_four_bits + minus_9) >> 31;
+    return !((x >> 4) ^ 0x3) & !((least_sig_four_bits ^ 0x9) &
+                                 (diff ^ minus_1));
+    /*             ↑
+     * check first four bits equal 0x3
+     *
+     */
 }
 /*
  * conditional - same as x ? y : z
