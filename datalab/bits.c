@@ -334,7 +334,28 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 unsigned floatScale2(unsigned uf) {
-  return 2;
+    int exp_and_sign = 0;
+    int frac = 0;
+
+    if (((0xff << 23) & uf) == (0xff << 23)) {
+        return uf;
+    } else if (uf == 0) {
+        return 0;
+    } else if (uf == 0x80000000) {
+        return uf;
+    } else if (uf == 1) {
+        return 2;
+    }
+    if (((uf >> 23) & 0x7) == 0) {
+        exp_and_sign = (uf >> 23) << 23;
+        frac = uf & 0x7fffff;
+        frac *= 2;
+    } else {
+        exp_and_sign = ((uf >> 23) + 1) << 23;
+        frac = uf & 0x7fffff;
+    }
+
+    return exp_and_sign + frac;
 }
 /*
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
@@ -349,7 +370,41 @@ unsigned floatScale2(unsigned uf) {
  *   Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
-  return 2;
+    /* 8 exponent bits */
+    int exp = (uf >> 23) & 0xFF;
+    /* 23 fraction bits */
+    int frac = uf & 0x7FFFFF;
+    /* amount to shift normalized values by (bias of 127) */
+    int e = exp - 127;
+
+    /* returns if NaN */
+    if (exp == 0x7F800000) {
+        return 0x80000000u;
+    }
+    /* rounds down to zero if exponent is zero */
+    if (!exp) {
+        return 0;
+    }
+    /* rounds down to zero if there are no left shifts */
+    if (e < 0) {
+        return 0;
+    }
+    /* return if out of range for ints */
+    if (e > 30) {
+        return 0x80000000u;
+    }
+    /* normalized, append a 1 to the left of the frac */
+    frac = frac | 0x800000;
+    if (e >= 23) { /* shift left if shift > 23 */
+        frac = frac << (e-23);
+    } else { /* else we need to shift right */
+        frac = frac >> (23 -e);
+    }
+    /* return negated value if sign bit is 1 */
+    if ((uf >> 31) & 1) {
+        return ~frac + 1;
+    }
+    return frac;
 }
 /*
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
@@ -365,5 +420,23 @@ int floatFloat2Int(unsigned uf) {
  *   Rating: 4
  */
 unsigned floatPower2(int x) {
-    return 2;
+    unsigned int exp;
+    unsigned int frac;
+    if (x < -149) {
+        return 0;
+    }
+    /* denormalized */
+    if (x < -126 && x >= -149) {
+        frac =  1 << (23 + x + 126);
+        return frac;
+    }
+    if (x >= -126 && x <= 127) {
+        exp = (x + 127) << 23;
+        return exp;
+    }
+    /* inf */
+    if (x > 127) {
+        return 0xFF << 23;
+    }
+    return 0;
 }
