@@ -280,7 +280,11 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4
  */
 int logicalNeg(int x) {
-  return 2;
+    /* if x == 0, then both (x >> 31) and (~x + 1) >> 31) equal zero.
+     * else either (x >> 31) or (~x + 1) >> 31) is all bits set to one,
+     * i.e. it equals -1.
+     */
+    return ((x >> 31) | ((~x + 1) >> 31)) + 1;
 }
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
@@ -295,7 +299,27 @@ int logicalNeg(int x) {
  *  Rating: 4
  */
 int howManyBits(int x) {
-  return 0;
+    /* dlc require this, :-( */
+    int sign, bit16, bit8, bit4, bit2, bit1;
+
+    sign = x >> 31;
+    /* Get rid of negative sign if x < 0.
+     * Ex:                     x = -1234567 (-0b100101101011010000111)
+     * (sign & ~x) | (~sign & x) =  1234566 ( 0b100101101011010000110)
+     */
+    x = (sign & ~x) | (~sign & x);
+    bit16 = !!(x >> 16) << 4;
+    x = x >> bit16;
+    bit8 = !!(x >> 8) << 3;
+    x = x >> bit8;
+    bit4 = !!(x >> 4) << 2;
+    x = x >> bit4;
+    bit2 = !!(x >> 2) << 1;
+    x = x >> bit2;
+    bit1 = !!(x >> 1);
+    x = x >> bit1;
+
+    return bit16 + bit8 + bit4 + bit2 + bit1 + x + 1;
 }
 //float
 /*
