@@ -246,7 +246,13 @@ int isAsciiDigit(int x) {
  *   Rating: 3
  */
 int conditional(int x, int y, int z) {
-  return 2;
+    int minus_1 = ~1 + 1;
+    /* !x is the same as x == 0
+     * if x == 0, then is_x_true = -1 (all bits set to one)
+     * else is_x_true = 0;
+     */
+    int is_x_true = !x + minus_1;
+    return (is_x_true & y) | (~is_x_true & z);
 }
 /*
  * isLessOrEqual - if x <= y  then return 1, else return 0
@@ -256,7 +262,13 @@ int conditional(int x, int y, int z) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-  return 2;
+    /* = 1 when the signs are different (by comparing the most significant bit)
+     */
+    int is_diff_sign = !!((x >> 31) ^ (y >> 31));
+    int x_negative_y_positive = is_diff_sign & (x >> 31);
+    /* check if is the same sign and compare the magnitude (y - x) */
+    int is_less = !is_diff_sign & !((y + (~x + 1)) >> 31);
+    return x_negative_y_positive | is_less;
 }
 //4
 /*
