@@ -3,6 +3,7 @@ This is an x86-64 bomb for self-study students.
 ## TL;DR
 
 - Phase 1: Border relations with Canada have never been better.
+- Phase 2: 1 2 4 8 16 32
 
 ## Phase 1
 
@@ -61,3 +62,94 @@ $4 = "Border relations with Canada have never been better.\000\000\000\000Wow!"
 ```
 
 Answer: Border relations with Canada have never been better.
+
+## Phase 2
+
+Set breakpoint at phase_2() and explode_bomb():
+
+```shell
+(gdb) b phase_2
+Breakpoint 1 at 0x400efc
+(gdb) b explode_bomb 
+Breakpoint 2 at 0x40143a
+```
+
+Start the program with phase 1:
+
+```shell
+(gdb) run
+Starting program: ...
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+Welcome to my fiendish little bomb. You have 6 phases with
+which to blow yourself up. Have a nice day!
+Border relations with Canada have never been better.
+Phase 1 defused. How about the next one?
+```
+
+After entering some random characters we can apply gdb command `disassemble` to dump assembler code for function phase_2:
+
+```shell
+Breakpoint 1, 0x0000000000400efc in phase_2 ()
+(gdb) disassemble 
+Dump of assembler code for function phase_2:
+=> 0x0000000000400efc <+0>:	push   %rbp
+   0x0000000000400efd <+1>:	push   %rbx
+   0x0000000000400efe <+2>:	sub    $0x28,%rsp
+   0x0000000000400f02 <+6>:	mov    %rsp,%rsi
+   0x0000000000400f05 <+9>:	call   0x40145c <read_six_numbers>
+   0x0000000000400f0a <+14>:	cmpl   $0x1,(%rsp)
+   0x0000000000400f0e <+18>:	je     0x400f30 <phase_2+52>
+   0x0000000000400f10 <+20>:	call   0x40143a <explode_bomb>
+   0x0000000000400f15 <+25>:	jmp    0x400f30 <phase_2+52>
+   0x0000000000400f17 <+27>:	mov    -0x4(%rbx),%eax
+   0x0000000000400f1a <+30>:	add    %eax,%eax
+   0x0000000000400f1c <+32>:	cmp    %eax,(%rbx)
+   0x0000000000400f1e <+34>:	je     0x400f25 <phase_2+41>
+   0x0000000000400f20 <+36>:	call   0x40143a <explode_bomb>
+   0x0000000000400f25 <+41>:	add    $0x4,%rbx
+   0x0000000000400f29 <+45>:	cmp    %rbp,%rbx
+   0x0000000000400f2c <+48>:	jne    0x400f17 <phase_2+27>
+   0x0000000000400f2e <+50>:	jmp    0x400f3c <phase_2+64>
+   0x0000000000400f30 <+52>:	lea    0x4(%rsp),%rbx
+   0x0000000000400f35 <+57>:	lea    0x18(%rsp),%rbp
+   0x0000000000400f3a <+62>:	jmp    0x400f17 <phase_2+27>
+   0x0000000000400f3c <+64>:	add    $0x28,%rsp
+   0x0000000000400f40 <+68>:	pop    %rbx
+   0x0000000000400f41 <+69>:	pop    %rbp
+   0x0000000000400f42 <+70>:	ret    
+End of assembler dump.
+```
+
+Instruction `0x400f05 <+9>` shows us that phase 2 should be six numbers. We can confirm this by looking inside the function read_six_numbers():
+
+```shell
+(gdb) disassemble read_six_numbers
+Dump of assembler code for function read_six_numbers:
+   0x000000000040145c <+0>:	sub    $0x18,%rsp
+   0x0000000000401460 <+4>:	mov    %rsi,%rdx
+   0x0000000000401463 <+7>:	lea    0x4(%rsi),%rcx
+   0x0000000000401467 <+11>:	lea    0x14(%rsi),%rax
+   0x000000000040146b <+15>:	mov    %rax,0x8(%rsp)
+   0x0000000000401470 <+20>:	lea    0x10(%rsi),%rax
+   0x0000000000401474 <+24>:	mov    %rax,(%rsp)
+   0x0000000000401478 <+28>:	lea    0xc(%rsi),%r9
+   0x000000000040147c <+32>:	lea    0x8(%rsi),%r8
+   0x0000000000401480 <+36>:	mov    $0x4025c3,%esi
+   0x0000000000401485 <+41>:	mov    $0x0,%eax
+   0x000000000040148a <+46>:	call   0x400bf0 <__isoc99_sscanf@plt>
+   0x000000000040148f <+51>:	cmp    $0x5,%eax
+   0x0000000000401492 <+54>:	jg     0x401499 <read_six_numbers+61>
+   0x0000000000401494 <+56>:	call   0x40143a <explode_bomb>
+   0x0000000000401499 <+61>:	add    $0x18,%rsp
+   0x000000000040149d <+65>:	ret    
+End of assembler dump.
+(gdb) x/s 0x4025c3
+0x4025c3:	"%d %d %d %d %d %d"
+```
+
+The second argument of libc function sscanf() is "%d %d %d %d %d %d". 
+
+Instruction `0x400f0a <+14>` checks if array[0] equals 1. The rest of phase_2 are a loop that check if array[i] is twice as big as array[i - 1].
+
+Answer: 1 2 4 8 16 32
