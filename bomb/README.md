@@ -4,7 +4,14 @@ This is an x86-64 bomb for self-study students.
 
 - Phase 1: Border relations with Canada have never been better.
 - Phase 2: 1 2 4 8 16 32
+- Phase 3: 
 
+| Input 1 | Input 2 | Input 1 | Input 2 |
+|:-------:|:-------:|:-------:|:-------:|
+| 0 | 207 | 4 | 389 |
+| 1 | 311 | 5 | 206 |
+| 2 | 707 | 6 | 682 |
+| 3 | 256 | 7 | 327 |
 ## Phase 1
 
 Set breakpoint at phase_1() and explode_bomb():
@@ -153,3 +160,83 @@ The second argument of libc function sscanf() is "%d %d %d %d %d %d".
 Instruction `0x400f0a <+14>` checks if array[0] equals 1. The rest of phase_2 are a loop that check if array[i] is twice as big as array[i - 1].
 
 Answer: 1 2 4 8 16 32
+
+## Phase 3
+
+Use gdb command `disassemble` to dump assembler code for function phase_3:
+
+```shell
+(gdb) disassemble phase_3
+Dump of assembler code for function phase_3:
+   0x0000000000400f43 <+0>:	sub    $0x18,%rsp
+   0x0000000000400f47 <+4>:	lea    0xc(%rsp),%rcx
+   0x0000000000400f4c <+9>:	lea    0x8(%rsp),%rdx
+   0x0000000000400f51 <+14>:	mov    $0x4025cf,%esi
+   0x0000000000400f56 <+19>:	mov    $0x0,%eax
+   0x0000000000400f5b <+24>:	call   0x400bf0 <__isoc99_sscanf@plt>
+   0x0000000000400f60 <+29>:	cmp    $0x1,%eax
+   0x0000000000400f63 <+32>:	jg     0x400f6a <phase_3+39>
+   0x0000000000400f65 <+34>:	call   0x40143a <explode_bomb>
+   0x0000000000400f6a <+39>:	cmpl   $0x7,0x8(%rsp)
+   0x0000000000400f6f <+44>:	ja     0x400fad <phase_3+106>
+   0x0000000000400f71 <+46>:	mov    0x8(%rsp),%eax
+   0x0000000000400f75 <+50>:	jmp    *0x402470(,%rax,8)
+   0x0000000000400f7c <+57>:	mov    $0xcf,%eax
+   0x0000000000400f81 <+62>:	jmp    0x400fbe <phase_3+123>
+   0x0000000000400f83 <+64>:	mov    $0x2c3,%eax
+   0x0000000000400f88 <+69>:	jmp    0x400fbe <phase_3+123>
+   0x0000000000400f8a <+71>:	mov    $0x100,%eax
+   0x0000000000400f8f <+76>:	jmp    0x400fbe <phase_3+123>
+   0x0000000000400f91 <+78>:	mov    $0x185,%eax
+   0x0000000000400f96 <+83>:	jmp    0x400fbe <phase_3+123>
+   0x0000000000400f98 <+85>:	mov    $0xce,%eax
+   0x0000000000400f9d <+90>:	jmp    0x400fbe <phase_3+123>
+   0x0000000000400f9f <+92>:	mov    $0x2aa,%eax
+   0x0000000000400fa4 <+97>:	jmp    0x400fbe <phase_3+123>
+   0x0000000000400fa6 <+99>:	mov    $0x147,%eax
+   0x0000000000400fab <+104>:	jmp    0x400fbe <phase_3+123>
+   0x0000000000400fad <+106>:	call   0x40143a <explode_bomb>
+   0x0000000000400fb2 <+111>:	mov    $0x0,%eax
+   0x0000000000400fb7 <+116>:	jmp    0x400fbe <phase_3+123>
+   0x0000000000400fb9 <+118>:	mov    $0x137,%eax
+   0x0000000000400fbe <+123>:	cmp    0xc(%rsp),%eax
+   0x0000000000400fc2 <+127>:	je     0x400fc9 <phase_3+134>
+   0x0000000000400fc4 <+129>:	call   0x40143a <explode_bomb>
+   0x0000000000400fc9 <+134>:	add    $0x18,%rsp
+   0x0000000000400fcd <+138>:	ret    
+End of assembler dump.
+```
+
+Phase 3 use sscanf() to retrieve user input, by looking at $0x4025cf (-- format, the second argument of sscanf()) we know that our input should have the form "%d %d":
+
+```shell
+(gdb) x /s 0x4025cf
+0x4025cf:	"%d %d"
+```
+
+Then followed by a switch statement with its jump table stored at 0x402470:
+
+```shell
+(gdb) x /8gx 0x402470
+0x402470:	0x0000000000400f7c	0x0000000000400fb9
+0x402480:	0x0000000000400f83	0x0000000000400f8a
+0x402490:	0x0000000000400f91	0x0000000000400f98
+0x4024a0:	0x0000000000400f9f	0x0000000000400fa6
+```
+- If %rax == 0, then it will jump to 0x400f7c, which checks if the second user input equals $0xcf (207);
+- If %rax == 1, then it wiil jump to 0x400fb9, which checks if the second user input equals $0x137 (311).
+
+So on and so forth.
+
+Answer: (any of them is ok.)
+
+| Input 1 | Input 2 | Input 1 | Input 2 |
+|:-------:|:-------:|:-------:|:-------:|
+| 0 | 207 | 4 | 389 |
+| 1 | 311 | 5 | 206 |
+| 2 | 707 | 6 | 682 |
+| 3 | 256 | 7 | 327 |
+
+
+
+
