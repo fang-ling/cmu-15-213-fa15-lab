@@ -14,6 +14,9 @@ This is an x86-64 bomb for self-study students.
 | 3 | 256 | 7 | 327 |
 
 - Phase 4: 1 0 or 3 0 (maybe more).
+- Phase 5: 9?>567
+- Phase 6: 4 3 2 1 6 5 (7 - [3 4 5 6 1 2])
+
 ## Phase 1
 
 Set breakpoint at phase_1() and explode_bomb():
